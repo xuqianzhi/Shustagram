@@ -1,0 +1,60 @@
+<div style="display: flex; justify-content: center;">
+    <div style='background-color: white; padding: 16px;
+            margin-bottom: 12px;
+            display: flex; flex-direction: column; width: 800px;'>
+        <div style="display: flex; margin-bottom: 16px">
+            <img class="center-cropped" :src="p.user.profileImageUrl" style="margin-right: 12px">
+
+            <div style="display: flex; flex-direction: column; justify-content: center">
+                <div style="font-weight: bold; margin-bottom: 4px; font-size: 16px">
+                    {{p.user.fullName}}
+                </div>
+                <div style="font-size: 13px; color: rgb(128, 128, 128)">
+                    Posted {{p.fromNow}}
+                </div>
+            </div>
+
+        </div>
+
+        <div style="margin-bottom: 12px">
+            {{p.text}}
+        </div>
+
+        <div>
+            <img style="width: 100%; max-height: 1000px; margin-bottom: 12px" :src="p.imageUrl">
+        </div>
+
+        <div style="overflow: auto;">
+            <!-- Like and comment buttons -->
+            <div style="display: flex; flex-direction: row; float: left;">
+                <button class="action-button" v-if='!p.hasLiked' :disabled="isPerformingLike"
+                    v-on:click='handleLikeDislike(p)' style="cursor: pointer;">
+                    <img class="button-background" src="https://img.icons8.com/material-outlined/96/000000/like--v1.png">
+                </button>
+                <button class="action-button" v-if='p.hasLiked' :disabled="isPerformingLike"
+                    v-on:click='handleLikeDislike(p)' style="cursor: pointer;">
+                    <img class="button-background" src="https://img.icons8.com/fluency/96/000000/like.png">
+                </button>
+                <button class="action-button" v-on:click='displayPageDetail(p.id)' :disabled="isPerformingLike"  style="cursor: pointer;">
+                    <img class="button-background"
+                        src="https://img.icons8.com/material-outlined/96/000000/comments--v1.png">
+                </button>
+            </div>
+            <!-- Delete post button -->
+            <div style="float: right; margin-right: 16px;">
+                <button class="action-button" v-if="p.canDelete" v-on:click="deletePost(p)">
+                    <img class="button-background"
+                        src="https://img.icons8.com/material-outlined/384/000000/trash--v1.png" />
+                </button>
+            </div>
+        </div>
+
+        <div style="margin-left: 12px;">
+            <button style="background-color: transparent; cursor: pointer; border: 0px transparent; font-size: 18px; margin-top: 5px;" 
+                v-on:click='displayLikes(p.id)'>
+                {{p.numLikes}} Likes
+            </button>
+        </div>
+
+    </div>
+</div>

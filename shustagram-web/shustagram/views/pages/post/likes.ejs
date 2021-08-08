@@ -1,0 +1,50 @@
+<style>
+    .center-cropped {
+        object-position: center;
+        /* Center the image within the element */
+        object-fit: cover;
+        width: 50px;
+        height: 50px;
+        border-radius: 25px;
+        border: solid 1px rgb(94, 94, 94);
+    }
+</style>
+
+<div>
+    <%- partial('../../partials/navbar.ejs') %>
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+        <%- exposeLocalsToBrowser({keys: ['likes']}) %>
+
+            <div id="app" style="display: flex; justify-content: center;">
+                <div style="width: 50%; padding: 16px;">
+                    <h1> Likes </h1>
+                    <div v-for="like in likes" style="background-color: white; margin-bottom: 16px; height: 70px;
+            padding: 16px; overflow: auto; font-size: 16px;" v-bind:key="like.id">
+                        <div style="float: left; display: flex; flex-direction: row; ">
+                            <div>
+                                <img class="center-cropped" :src="like.user.profileImageUrl">
+                            </div>
+                            <div style="padding-left: 16px; padding-top: 3px;">
+                                <a :href="'/user/' + like.user.id" style="font-size: 18px;">
+                                    {{like.user.fullName}}
+                                </a>
+                                <div>
+                                    {{like.user.emailAddress}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                const likes = window.SAILS_LOCALS.likes
+                const App = new Vue({
+                    el: "#app",
+                    data: {
+                        likes: likes,
+                    }
+                })
+            </script>
+</div>

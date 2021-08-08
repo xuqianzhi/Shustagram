@@ -1,0 +1,212 @@
+<script>
+    function onFileChange(event) {
+        const file = event.target.files[0];
+        const imageSrc = window.URL.createObjectURL(file);
+        document.getElementById('selectedImage').src = imageSrc;
+        document.getElementById('selectedImage').style.display = 'block';
+    }
+</script>
+
+<style>
+    [v-cloak] {
+        display: none;
+    }
+
+    .action-button {
+        width: 50px;
+        height: 50px;
+        background-color: transparent;
+        border: transparent;
+    }
+
+    .button-background {
+        object-fit: fill;
+        width: 25px;
+        height: 25px;
+        border-radius: 10px;
+    }
+
+    .center-cropped {
+        object-position: center;
+        /* Center the image within the element */
+        object-fit: cover;
+        width: 50px;
+        height: 50px;
+        border-radius: 25px;
+        border: solid 1px rgb(94, 94, 94);
+    }
+
+    #create-post-button {
+        width: 75%;
+        margin: 20px;
+        background-color: white;
+        border: solid 1px black;
+        height: 34px;
+        font-weight: bold;
+        font-size: 14px;
+        border-radius: 10px;
+        margin-bottom: 16px
+    }
+
+    .modal-container {
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        position: fixed;
+        padding-top: 200px;
+        background-color: rgba(0, 0, 0, 0.8)
+    }
+
+    .modal-form {
+        margin: auto;
+        background-color: white;
+        width: 50%;
+        padding: 16px;
+        border-radius: 5px
+    }
+
+    #warning-label {
+        margin: 10px;
+        color: red;
+    }
+
+    .blue {
+        background-color: dodgerblue;
+    }
+
+    .red {
+        background-color: red;
+    }
+
+    .gray {
+        background-color: darkgray
+    }
+</style>
+
+<!-- Vue.js library -->
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<!-- axios library -->
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+<div style="background-color: rgb(238, 238, 238)">
+
+    <%- partial('../../partials/navbar.ejs') %>
+
+        <div id="app">
+            <!-- post modal container -->
+            <div v-if='shouldShowPostForm' class="modal-container">
+                <div class="modal-form">
+                    <div>
+                        Create Post
+                    </div>
+                    <!-- v-model is used to bidirectionally bind a state variable to an input -->
+                    <textarea style="height: 100px; width: 100%; 
+                    border: solid 1px darkgray; margin: 12px 0px;
+                    border-radius: 5px; font-size: 14px;
+                    padding: 12px" v-model="postBodyText" placeholder="Enter post body here" :disabled="isCreatingPost"></textarea>
+                    <input :disabled="isCreatingPost" v-on:change="handleFileChange" type="file">
+                    <img style="max-height: 200px; max-width: 100%; margin-top: 12px" :src="postFileImageSource">
+                    <div id='warning-label' style="display: none;"></div>
+                    <div style="display: flex; margin-top: 16px">
+                        <div style="flex: 1"></div>
+                        <button :disabled="isCreatingPost" v-on:click="shouldShowPostForm = false" class="cancel">Cancel</button>
+                        <button :disabled="isCreatingPost"
+                            style="color: white; border-radius: 5px; border: solid 1px; margin-left: 12px"
+                            v-bind:class="isCreatingPost ? 'gray' : 'blue'" v-on:click="createPost()">
+                            Create
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- create post button -->
+            <div style="display: flex; justify-content: center;">
+                <button v-on:click="shouldShowPostForm = true" id="create-post-button">Create Post</button>
+            </div>
+
+            <div v-for="p in posts">
+                <%- partial('../../partials/post') %>
+            </div>
+        </div>
+
+        <%- /* Expose locals as `window.SAILS_LOCALS` :: */ exposeLocalsToBrowser({keys: ['allPosts']}) %>
+            <!-- Vue.js framework -->
+            <script>
+                const App = new Vue({
+                    el: '#app',
+                    data: {
+                        posts: window.SAILS_LOCALS.allPosts,
+                        // Post creation State variables
+                        isCreatingPost: false,
+                        isPerformingLike: false,
+                        postBodyText: null,
+                        postFileImageSource: null,
+                        selectedFile: null,
+                        shouldShowPostForm: false,
+                    },
+                    methods: {
+                        createPost: async function () {
+                            // First confirm text and image are both entered
+                            if (!this.postBodyText || this.postBodyText.length == 0) {
+                                document.getElementById("warning-label").style.display = 'block'
+                                document.getElementById("warning-label").textContent = 'Please enter non-empty text'
+                                return
+                            } else if (!this.selectedFile) {
+                                document.getElementById("warning-label").style.display = 'block'
+                                document.getElementById("warning-label").textContent = 'Please choose a valid image'
+                                return
+                            }
+                            document.getElementById("warning-label").style.display = 'none'
+                            // Before sending our POST request, we create FormData with postBody 
+                            // and imagefile for the server to consume
+                            const formData = new FormData()
+                            formData.append("postBody", this.postBodyText)
+                            formData.append('imagefile', this.selectedFile)
+                            this.isCreatingPost = true
+                            try {
+                                await axios.post('/post', formData)
+                                location.reload()
+                            } catch (err) {
+                                this.isCreatingPost = false
+                                console.error(err.toString())
+                            }
+                        },
+                        // when file selection happens, keep track of selectedFile
+                        handleFileChange: function (event) {
+                            this.selectedFile = event.target.files[0]
+                            this.postFileImageSource = window.URL.createObjectURL(this.selectedFile)
+                        },
+                        handleLikeDislike: async function (post) {
+                            const postHasBeenLike = post.hasLiked
+                            const numLikes = post.numLikes
+                            const postId = post.id
+                            this.isPerformingLike = true
+                            const likeStr = postHasBeenLike ? "dislike" : "like"
+                            try {
+                                // for a more interactive UI, update UI before response received
+                                post.hasLiked = !postHasBeenLike
+                                post.numLikes = postHasBeenLike ? numLikes - 1 : numLikes + 1
+                                await axios.post(`/${likeStr}/${postId}`)
+                                this.isPerformingLike = false
+                                console.log("Successfully " + likeStr + " the post " + postId)
+                            } catch (err) {
+                                console.error(err.toString())
+                                this.isPerformingLike = false
+                            }
+                        },
+                        displayPageDetail: function (pageId) {
+                            console.log("Going to page: " + pageId)
+                            document.location.href = '/post/' + pageId
+                            return
+                        },
+                        displayLikes: function (postId) {
+                            console.log("Displaying likes of post " + postId)
+                            document.location.href = '/likes/' + postId
+                            return 
+                        }
+                    }
+                })
+            </script>
+
+</div>

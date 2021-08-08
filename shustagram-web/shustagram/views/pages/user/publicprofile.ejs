@@ -1,0 +1,144 @@
+<style>
+    .center-cropped {
+        object-position: center;
+        /* Center the image within the element */
+        object-fit: cover;
+        width: 50px;
+        height: 50px;
+        border-radius: 25px;
+        border: solid 1px rgb(94, 94, 94);
+    }
+
+    .action-button {
+        width: 50px;
+        height: 50px;
+        background-color: transparent;
+        border: transparent;
+    }
+
+    .button-background {
+        object-fit: fill;
+        width: 25px;
+        height: 25px;
+        border-radius: 10px;
+    }
+</style>
+
+<div>
+
+    <%- exposeLocalsToBrowser({keys: ['user', 'posts' ]}) %>
+
+        <%- partial('../../partials/navbar.ejs') %>
+            <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+            <div id="app" style="max-width: 100%; padding: 24px;">
+
+                <div style="font-weight: bold; margin-bottom: 8px">
+                    User Information
+                </div>
+                <div style="margin-bottom: 24px; background-color: white; padding: 16px">
+                    <div>
+                        {{user.fullName}}
+                    </div>
+                    <div>
+                        {{user.emailAddress}}
+                    </div>
+                </div>
+
+                <div style="display: flex; flex: 1">
+                    <div style='flex: 1; margin-right: 24px'>
+                        <div style="font-weight: bold; margin-bottom: 8px">
+                            Currently Following
+                        </div>
+
+                        <div v-if="!user.following || user.following.length == 0" style="background-color: white; padding: 16px;
+                        margin-bottom: 16px">
+                            Not following anyone.
+                        </div>
+
+                        <div v-for="u in user.following"
+                            style="background-color: white; margin-bottom: 16px; padding: 16px">
+                            <div>
+                                {{u.fullName}}
+                            </div>
+                            <div>
+                                {{u.emailAddress}}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style='flex: 1'>
+                        <div style="font-weight: bold; margin-bottom: 8px">
+                            Followers
+                        </div>
+
+                        <div v-if="!user.following || user.followers.length == 0" style="background-color: white; padding: 16px;
+                        margin-bottom: 16px">
+                            No followers.
+                        </div>
+
+                        <div v-for="u in user.followers"
+                            style="background-color: white; margin-bottom: 16px; padding: 16px">
+                            <div>
+                                {{u.fullName}}
+                            </div>
+                            <div>
+                                {{u.emailAddress}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="font-weight: bold; margin-bottom: 16px">
+                    Posts
+                </div>
+
+                <div v-for="p in posts">
+                    <%- partial('../../partials/post') %>
+                </div>
+
+            </div>
+
+            <script>
+                const app = new Vue({
+                    el: '#app',
+                    data: {
+                        message: 'Hello from VUE',
+                        user: window.SAILS_LOCALS.user,
+                        posts: window.SAILS_LOCALS.user.posts,
+                        isPerformingLike: false
+                    },
+                    methods: {
+                        handleLikeDislike: async function (post) {
+                            const postHasBeenLike = post.hasLiked
+                            const numLikes = post.numLikes
+                            const postId = post.id
+                            this.isPerformingLike = true
+                            const likeStr = postHasBeenLike ? "dislike" : "like"
+                            try {
+                                // for a more interactive UI, update UI before response received
+                                post.hasLiked = !postHasBeenLike
+                                post.numLikes = postHasBeenLike ? numLikes - 1 : numLikes + 1
+                                await axios.post(`/${likeStr}/${postId}`)
+                                this.isPerformingLike = false
+                                console.log("Successfully " + likeStr + " the post " + postId)
+                            } catch (err) {
+                                console.error(err.toString())
+                                this.isPerformingLike = false
+                            }
+                        },
+                        displayPageDetail: function (pageId) {
+                            console.log("Going to page: " + pageId)
+                            document.location.href = '/post/' + pageId
+                            return
+                        },
+                        displayLikes: function (postId) {
+                            console.log("Displaying likes of post " + postId)
+                            document.location.href = '/likes/' + postId
+                            return 
+                        }
+                    }
+                })
+            </script>
+
+</div>

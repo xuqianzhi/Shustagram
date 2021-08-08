@@ -1,0 +1,110 @@
+<style>
+    .outer-div {
+        display: flex; justify-content: center;
+        height: 100%
+    }
+
+    .inner-div {
+        display: flex; justify-content: center; 
+        flex-direction: column
+    }
+
+    input {
+        border-radius: 6px;
+        border: solid 1px rgb(215, 215, 215);
+        padding: 12px;
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+
+    button {
+        background-color: dodgerblue;
+        font-size: 14px; font-weight: bold;
+        color: white;
+        padding: 12px;
+        border-radius: 5px;
+        border-width: 0px;
+    }
+
+</style>
+
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+<script>
+
+    async function handleLogin() {
+        console.log("Trying to login...")
+        document.getElementById('loginButton').disabled = true
+        document.getElementById('loginButton').style.backgroundColor = 'grey'
+        // fire off a put request
+        const email = document.getElementById('emailTextField').value
+        const password = document.getElementById('passwordTextField').value
+        const formData = new FormData()
+        formData.append("emailAddress", email)
+        formData.append('password', password)
+
+        const errorDiv = document.getElementById('errorMessage')
+        errorDiv.style.display = 'none'
+        try {
+            const response = await axios.put('/api/v1/entrance/login', formData)
+            document.location = "/post"
+        } catch (err) {
+            console.error(err)
+            errorDiv.style.display = 'block'
+            if (err.response && err.response.data && err.response.data.problems) {
+                errorDiv.innerHTML = err.response.data.problems[0]
+            } else {
+                errorDiv.innerHTML = "Something went wrong with your Login."
+            }
+            document.getElementById('loginButton').disabled = false
+            document.getElementById('loginButton').style.backgroundColor = 'dodgerblue'
+        }
+    }
+
+</script>
+
+<div class="outer-div" style='font-family: Arial, Helvetica, sans-serif'>
+
+    <div class="inner-div">
+
+        <div style='display: flex; justify-content: center'>
+            <div>
+                <div style='display: flex; justify-content: center;'>
+                    <img style="width: 400px;" src="https://shustagram-images.s3.us-east-2.amazonaws.com/public/shustagram.png">
+                </div>
+                
+                <!-- <div style='margin-bottom: 16px; font-size: 28px; font-weight: bold'>
+                    Shustagram
+                </div> -->
+            </div>
+        </div>
+
+        <div style="background-color: white; padding: 24px; border-radius: 6px">
+
+            <div style="font-weight: bold; font-size: 16px; 
+                margin-bottom: 16px; text-align: center">
+                Log into your account
+            </div>
+
+            <form
+                style='display: flex; flex-direction: column'>
+                <input id='emailTextField' name="emailAddress" type="text" placeholder="Email">
+                <input id='passwordTextField' name="password" type="password" placeholder="Password">
+                <button id='loginButton' onclick="handleLogin()" type="button">Login</button>
+            </form>
+
+            <div id='errorMessage' style='font-size: 14px; color: red; text-align: center'>
+            </div>
+
+            <div style="display: flex; justify-content: center;">
+                Don't have an account? 
+                <a href="/signup">Sign up</a>.
+            </div>
+
+        </div>
+
+        
+    </div>
+
+    
+</div>

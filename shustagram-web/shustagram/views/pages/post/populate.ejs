@@ -1,0 +1,72 @@
+<!-- Vue.js library -->
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<!-- axios library -->
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+<div id='app'>
+    <button v-on:click='populateUsers()'>
+        Populate Users
+    </button>
+    <!-- <button v-on:click="populatePosts()">
+        Populate Posts
+    </button> -->
+</div>
+
+
+<%- /* Expose locals as `window.SAILS_LOCALS` :: */ exposeLocalsToBrowser() %>
+    <script>
+        const App = new Vue({
+            el: '#app',
+            data: {
+                allUsers: window.SAILS_LOCALS.allUsers
+            },
+            methods: {
+                populateUsers: async function () {
+                    console.log("populating a few users")
+                    const names = ['Ramen Eater', 'Doggy Lover', 'Basketball Fanboy', "Anime Otaku", "Gym Bear", "Meditation Master", "Supercar Freak"]
+                    var emails = []
+                    for (let i = 0; i < names.length; i++) {
+                        var name = names[i]
+                        const email = name.split(" ")[0].toLowerCase() + "@gmail.com"
+                        console.log(email)
+                        emails.push(email)
+                    }
+                    const password = "fridayaugust6"
+
+                    for (let i = 0; i < names.length; i++) {
+                        const formData = new FormData();
+                        formData.append('fullName', names[i])
+                        formData.append('emailAddress', emails[i])
+                        formData.append('password', password)
+                        try {
+                            await axios.post('/api/v1/entrance/signup', formData)
+                        } catch {
+                            continue
+                        }
+                    }
+                },
+                populatePosts: async function () {
+                    console.log("populating a few posts to each user")
+                    const users = this.allUsers;
+                    console.log("all users found: ", users)
+                    // populate 10 posts for each user
+
+                    for (let j = 0; j < users.length; j++) {
+                        const u = users[j]
+                        const id = u.id
+                        const fullName = u.fullName
+                        for (let i = 0; i < 4; i++) {
+                            const formData = new FormData();
+                            formData.append('postBody', `populated post for user ${fullName} ${i}`)
+                            formData.append('populateUserId', id)
+                            try {
+                                await axios.post('/post', formData)
+                            } catch (err) {
+                                console.log("Error populating post: ", err)
+                            }
+                        }
+                    }
+                }
+            }
+        })
+    </script>

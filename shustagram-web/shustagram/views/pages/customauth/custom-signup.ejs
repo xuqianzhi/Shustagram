@@ -1,0 +1,121 @@
+<style>
+    .outer-div {
+        display: flex;
+        justify-content: center;
+        height: 100%
+    }
+
+    .inner-div {
+        width: 25%;
+        display: flex;
+        justify-content: center;
+        flex-direction: column
+    }
+
+    input {
+        border-radius: 6px;
+        border: solid 1px rgb(215, 215, 215);
+        padding: 12px;
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+
+    button {
+        background-color: dodgerblue;
+        font-size: 14px;
+        font-weight: bold;
+        color: white;
+        padding: 12px;
+        border-radius: 5px;
+        border-width: 0px;
+    }
+</style>
+
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+<script>
+
+    async function handleSignup() {
+        console.log("Creating a new account")
+        document.getElementById('signupButton').disabled = true
+        document.getElementById('signupButton').style.backgroundColor = 'grey'
+        // fire off a put request
+        const fullName = document.getElementById('fullNameTextField').value
+        const email = document.getElementById('emailTextField').value
+        const password = document.getElementById('passwordTextField').value
+        const confirm = document.getElementById('confirmTextField').value
+        
+        const errorDiv = document.getElementById('errorMessage')
+        if (password != confirm) {
+            errorDiv.style.display = 'block'
+            errorDiv.innerHTML = "Passwords does not match"
+            return
+        }
+        errorDiv.style.display = 'none'
+        const formData = new FormData()
+        formData.append('fullName', fullName)
+        formData.append('emailAddress', email)
+        formData.append('password', password)
+        try {
+            await axios.post('/api/v1/entrance/signup', formData)
+            document.location = "/"
+        } catch (err) {
+            console.error(err)
+            errorDiv.style.display = 'block'
+            if (err.response && err.response.data && err.response.data.problems) {
+                errorDiv.innerHTML = err.response.data.problems[0]
+            } else {
+                errorDiv.innerHTML = "Something went wrong with your Sign Up."
+            }
+            document.getElementById('signupButton').disabled = false
+            document.getElementById('signupButton').style.backgroundColor = 'dodgerblue'
+        }
+    }
+
+</script>
+
+<div class="outer-div" style='font-family: Arial, Helvetica, sans-serif'>
+
+    <div class="inner-div">
+
+        <div style='display: flex; justify-content: center'>
+            <div>
+                <div style='display: flex; justify-content: center'>
+                    <img style="width: 400px" src='https://shustagram-images.s3.us-east-2.amazonaws.com/public/shustagram.png'>
+                </div>
+                <!-- <div style='margin-bottom: 16px; font-size: 28px; font-weight: bold'>
+                    Shustagram
+                </div> -->
+            </div>
+        </div>
+
+        <div style="background-color: white; padding: 24px; border-radius: 6px">
+
+            <div style="font-weight: bold; font-size: 16px; 
+                margin-bottom: 16px; text-align: center">
+                Signup a new account
+            </div>
+
+            <form style='display: flex; flex-direction: column'>
+                <input id='fullNameTextField' name="fullName" type="text" placeholder="Full Name">
+                <input id='emailTextField' name="emailAddress" type="text" placeholder="Email">
+                <input id='passwordTextField' name="password" type="password" placeholder="Password">
+                <input id='confirmTextField' name="confirm" type="password" placeholder="Confirm Password">
+                <button id='signupButton' onclick="handleSignup()" type="button">Sign Up</button>
+            </form>
+
+            <div id='errorMessage' style='font-size: 14px; color: red; text-align: center'>
+            </div>
+
+            <div style="display: flex; justify-content: center;">
+                Already have an account?
+                <a href="/login">Login</a>.
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+</div>

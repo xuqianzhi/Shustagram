@@ -1,0 +1,149 @@
+<div>
+    <style>
+        .center-cropped {
+            object-position: center;
+            /* Center the image within the element */
+            object-fit: cover;
+            width: 50px;
+            height: 50px;
+            border-radius: 100px;
+            border: solid 1px rgb(94, 94, 94);
+        }
+
+        .action-button {
+            width: 50px;
+            height: 50px;
+            background-color: transparent;
+            border: transparent;
+        }
+
+        .button-background {
+            object-fit: fill;
+            width: 25px;
+            height: 25px;
+            border-radius: 10px;
+        }
+
+        .comment-button {
+            padding: 8px;
+            margin-top: 8px;
+            margin-bottom: 16px;
+            color: white;
+            font-weight: bold
+        }
+
+        .enabled {
+            background-color: dodgerblue;
+        }
+
+        .disabled {
+            background-color: grey;
+        }
+    </style>
+
+    <%- exposeLocalsToBrowser({keys: ['post']}) %>
+
+        <%- partial('../../partials/navbar.ejs') %>
+            <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+            <div id="app" style="padding: 24px">
+
+                <div v-for="p in [post]">
+                    <%- partial('../../partials/post') %>
+                </div>
+
+                <div style="display: flex; flex-direction: row; justify-content: center; width: 100%;">
+                    <textarea v-model="postText" name="text" style="width: 800px; padding: 16px; font-size: 14px;"
+                        placeholder="Enter comment"></textarea>
+                </div>
+                <div style="display: flex; flex-direction: row; justify-content: center; width: 100%;">
+                    <div style="display: flex; width: 800px;">
+                        <div style="flex: 1"></div>
+                        <button :disabled='isSubmittingComment' v-on:click="handleSubmit" style="border-radius: 5px;"
+                            v-bind:class="isSubmittingComment ? 'comment-button disabled' : 'comment-button enabled'">
+                            Submit Comment
+                        </button>
+                    </div>
+                </div>
+
+                <div v-for=" c in post.comments" style="padding: 16px; margin-bottom: 16px; 
+                    width: 100%; display: flex; flex-direction: row; justify-content: center;">
+                    <div style="width: 800px; background-color: white; padding: 16px;">
+                        <div style="display: flex">
+                            <img class="center-cropped" :src="c.user.profileImageUrl">
+                            <div style="margin-left: 16px; justify-content: center">
+                                <div style="font-weight: bold">
+                                    {{c.user.fullName}}
+                                </div>
+                                <div>
+                                    Posted {{c.fromNow}}
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div style="margin-top: 16px">
+                            {{c.text}}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <script>
+                const app = new Vue({
+                    el: "#app",
+                    data: {
+                        message: "Vue start",
+                        post: window.SAILS_LOCALS.post,
+                        postText: null,
+                        isPerformingLike: false,
+                        isSubmittingComment: false
+                    },
+                    methods: {
+                        handleSubmit: async function () {
+                            console.log(this.postText)
+                            if (!this.postText || this.postText.length == 0) {
+                                this.isSubmittingComment = false
+                                return
+                            }
+                            this.isSubmittingComment = true
+                            const formData = new FormData()
+                            formData.append('text', this.postText)
+                            const response = await axios.post('/comment/post/' + this.post.id,
+                                formData)
+                            location.reload()
+                        },
+                        handleLikeDislike: async function (post) {
+                            const postHasBeenLike = post.hasLiked
+                            const numLikes = post.numLikes
+                            const postId = post.id
+                            this.isPerformingLike = true
+                            const likeStr = postHasBeenLike ? "dislike" : "like"
+                            try {
+                                // for a more interactive UI, update UI before response received
+                                post.hasLiked = !postHasBeenLike
+                                post.numLikes = postHasBeenLike ? numLikes - 1 : numLikes + 1
+                                await axios.post(`/${likeStr}/${postId}`)
+                                this.isPerformingLike = false
+                                console.log("Successfully " + likeStr + " the post " + postId)
+                            } catch (err) {
+                                console.error(err.toString())
+                                this.isPerformingLike = false
+                            }
+                        },
+                        displayPageDetail: function (pageId) {
+                            console.log("Going to page: " + pageId)
+                            document.location.href = '/post/' + pageId
+                            return
+                        },
+                        displayLikes: function (postId) {
+                            console.log("Displaying likes of post " + postId)
+                            document.location.href = '/likes/' + postId
+                            return 
+                        }
+                    }
+                })
+            </script>
+
+</div>

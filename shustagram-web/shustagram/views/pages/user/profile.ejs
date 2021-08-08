@@ -1,0 +1,273 @@
+<style>
+    [v-cloak] {
+        display: none;
+    }
+
+    .action-button {
+        width: 50px;
+        height: 50px;
+        background-color: transparent;
+        border: transparent;
+    }
+
+    .button-background {
+        object-fit: fill;
+        width: 25px;
+        height: 25px;
+        border-radius: 10px;
+    }
+
+    .center-cropped {
+        object-position: center;
+        /* Center the image within the element */
+        object-fit: cover;
+        width: 64px;
+        height: 64px;
+        border-radius: 100px;
+        border: solid 1px rgb(94, 94, 94);
+    }
+
+    .enabled {
+        background-color: dodgerblue
+    }
+
+    .disabled {
+        background-color: grey
+    }
+
+    .form-item-label {
+        font-size: 15px;
+        font-weight: bold;
+        margin-right: 16px;
+        width: 140px;
+        text-align: right
+    }
+
+    .save-button {
+        flex: 1;
+        width: 100%;
+        color: white;
+        font-weight: bold;
+        padding: 8px;
+        border: solid;
+        border-radius: 5px;
+        font-size: 16px
+    }
+
+    .form-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 16px
+    }
+
+    .fullname-input {
+        font-size: 14px;
+        padding: 8px;
+        border-radius: 5px;
+        border: solid 1px rgb(206, 206, 206)
+    }
+
+    .modal-container {
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        position: fixed;
+        padding-top: 200px;
+        background-color: rgba(0, 0, 0, 0.8)
+    }
+
+    .modal-form {
+        margin: auto;
+        background-color: white;
+        width: 50%;
+        padding: 16px;
+        border-radius: 5px
+    }
+
+    .red {
+        background-color: red;
+    }
+
+    .gray {
+        background-color: darkgray
+    }
+</style>
+
+<div>
+
+    <%- exposeLocalsToBrowser({keys: ['user']}) %>
+
+        <%- partial('../../partials/navbar.ejs') %>
+            <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+            <div id="app" style="padding: 24px">
+
+                <!-- delete modal container -->
+                <div v-if="shouldShowDeleteConfirmation" class="modal-container">
+                    <div class="modal-form">
+                        <div>
+                            Are you sure you want to delete?
+                        </div>
+
+                        <div style="margin-top: 16px; display: flex">
+                            <div style="flex: 1"></div>
+                            <button :disabled="isDeletingPost" v-on:click="shouldShowDeleteConfirmation = false">Cancel</button>
+                            <button :disabled="isDeletingPost" v-on:click="confirmDelete()" v-bind:class="[isDeletingPost ? 'gray' : 'red']" style="color: white; 
+                        margin-left: 16px; border-radius: 2px; border-width: 0px;">Delete</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ACCOUNT SETTINGS -->
+                <div style="margin-bottom: 8px; padding: 16px; background-color: white">
+                    <div style="font-weight: bold">
+                        Account Settings
+                    </div>
+
+                    <div style="background-color: white; padding: 16px">
+
+                        <div class="form-item">
+                            <div class='form-item-label'>
+                                Email address:
+                            </div>
+                            <div style="font-size: 14px">
+                                {{user.emailAddress}}
+                            </div>
+                        </div>
+
+                        <div class="form-item">
+                            <div class='form-item-label'>
+                                Full name:
+                            </div>
+                            <input type="text" v-model="user.fullName" class="fullname-input">
+                        </div>
+
+                        <div class="form-item">
+                            <div class='form-item-label'>
+                                Profile Picture:
+                            </div>
+                            <div>
+                                <img class="center-cropped"
+                                    :src="user.profileImageUrl ? user.profileImageUrl : 'https://shustagram-images.s3.us-east-2.amazonaws.com/public/user.png'">
+                                <div style="margin-top: 12px">
+                                    <input type="file" v-on:change="handleAvatarChange">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button v-on:click="handleSave" :disabled="isSaving"
+                            v-bind:class="isSaving ? 'save-button disabled' : 'save-button enabled'">
+                            Save
+                        </button>
+
+                    </div>
+                </div>
+
+                <!-- POSTS -->
+                <div style="margin: 16px 0px; font-weight: bold">
+                    Posts
+                </div>
+                <div v-for="p in user.posts">
+                    <%- partial('../../partials/post') %>
+                </div>
+
+            </div>
+
+            <script>
+                const user = window.SAILS_LOCALS.user
+                const original_fullName = user.fullName
+                const app = new Vue({
+                    el: "#app",
+                    data: {
+                        user: user,
+                        isSaving: false,
+                        avatarFile: null,
+                        shouldShowDeleteConfirmation: false,
+                        selectedPostToDelete: null,
+                        isPerformingLike: false,
+                        isDeletingPost: false,
+                    },
+                    methods: {
+                        handleSave: async function () {
+                            const newFullName = this.user.fullName
+                            if (original_fullName == newFullName && !this.avatarFile) {
+                                console.log("Nothing to update")
+                                return
+                            }
+                            console.log("Updating user profile")
+                            this.isSaving = true
+                            const formData = new FormData()
+                            formData.append('fullName', newFullName)
+                            formData.append('imagefile', this.avatarFile)
+                            // fire off a post request to update user
+                            try {
+                                await axios.post('/profile', formData)
+                                location.reload()
+                            } catch (err) {
+                                this.isSaving = false
+                                console.error(err.toString())
+                            }
+                        },
+                        handleAvatarChange: function (event) {
+                            const file = event.target.files[0]
+                            if (file) {
+                                this.avatarFile = file
+                                this.user.profileImageUrl = window.URL.createObjectURL(file)
+                            }
+                        },
+                        deletePost: async function (post) {
+                            this.selectedPostToDelete = post
+                            this.shouldShowDeleteConfirmation = true
+                            return
+                        },
+                        confirmDelete: async function () {
+                            console.log("confirmed delete")
+                            const postId = this.selectedPostToDelete.id
+
+                            try {
+                                this.isDeletingPost = true
+                                await axios.delete(`/post/${postId}`)
+                                this.shouldShowDeleteConfirmation = false
+                                this.user.posts = this.user.posts.filter(p => {
+                                    return p.id != this.selectedPostToDelete.id
+                                })
+                                this.isDeletingPost = false
+                            } catch (err) {
+                                this.isDeletingPost = false
+                                console.error(err.toString())
+                            }
+                        },
+                        handleLikeDislike: async function (post) {
+                            const postHasBeenLike = post.hasLiked
+                            const numLikes = post.numLikes
+                            const postId = post.id
+                            this.isPerformingLike = true
+                            const likeStr = postHasBeenLike ? "dislike" : "like"
+                            try {
+                                // for a more interactive UI, update UI before response received
+                                post.hasLiked = !postHasBeenLike
+                                post.numLikes = postHasBeenLike ? numLikes - 1 : numLikes + 1
+                                await axios.post(`/${likeStr}/${postId}`)
+                                this.isPerformingLike = false
+                                console.log("Successfully " + likeStr + " the post " + postId)
+                            } catch (err) {
+                                console.error(err.toString())
+                                this.isPerformingLike = false
+                            }
+                        },
+                        displayPageDetail: function (pageId) {
+                            console.log("Going to page: " + pageId)
+                            document.location.href = '/post/' + pageId
+                            return
+                        },
+                        displayLikes: function (postId) {
+                            console.log("Displaying likes of post " + postId)
+                            document.location.href = '/likes/' + postId
+                            return 
+                        }
+                    }
+                })
+            </script>
+
+</div>

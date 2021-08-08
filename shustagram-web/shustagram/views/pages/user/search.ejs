@@ -1,0 +1,113 @@
+<style>
+    .following {
+        background-color: black;
+        color: white
+    }
+
+    .not-following {
+        background-color: white;
+        color: black
+    }
+
+    .center-cropped {
+        object-position: center;
+        /* Center the image within the element */
+        object-fit: cover;
+        width: 50px;
+        height: 50px;
+        border-radius: 25px;
+        border: solid 1px rgb(94, 94, 94);
+    }
+
+    #nameInput {
+        border-radius: 25px;
+        background-position: 10px 12px;
+        background-repeat: no-repeat;
+        width: 100%;
+        height: 50px;
+        font-size: 16px;
+        padding: 12px 20px 12px 40px;
+        border: 1px solid #ddd;
+        margin-bottom: 12px;
+    }
+</style>
+
+<div>
+    <%- partial('../../partials/navbar.ejs') %>
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+        <%- exposeLocalsToBrowser({keys: ['users']}) %>
+
+            <div id="app" style="display: flex; justify-content: center;">
+                <div style="width: 75%; padding: 16px;">
+                    <input type="text" id="nameInput" v-on:keyup='onInputChange()' placeholder="Search for names..">
+                    <div v-for="u in users" style="background-color: white; margin-bottom: 16px; height: 70px;
+            padding: 16px; overflow: auto; font-size: 16px;" v-bind:key="u.id" v-if="shouldDisplayUser(u.fullName)">
+                        <div style="float: left; display: flex; flex-direction: row; ">
+                            <div>
+                                <img class="center-cropped" :src="u.profileImageUrl">
+                            </div>
+                            <div style="padding-left: 16px; padding-top: 3px;">
+                                <a :href="'/user/' + u.id" style="font-size: 18px;">
+                                    {{u.fullName}}
+                                </a>
+                                <div>
+                                    {{u.emailAddress}}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="float: right; width: 140px; height: 40px;">
+                            <button :disabled="isPerformingFollow"
+                                style="border-radius: 5px; width: 100%; height: 100%; border-radius: 5px; font-size: 17px;"
+                                v-on:click="follow(u)" v-bind:class="u.isFollowing ? 'following' : 'not-following'">
+                                {{u.isFollowing ? 'Unfollow' : 'Follow'}}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                const allUsers = window.SAILS_LOCALS.users
+                const App = new Vue({
+                    el: "#app",
+                    data: {
+                        users: allUsers,
+                        nameInput: "",
+                        isPerformingFollow: false
+                    },
+                    methods: {
+                        follow: async function (toFollowUser) {
+                            this.isPerformingFollow = true
+                            // for a more interactive UI, update UI before response received
+                            const isFollowing = toFollowUser.isFollowing
+                            const originalId = toFollowUser.id
+                            toFollowUser.id = "TEMP"
+                            toFollowUser.isFollowing = !isFollowing
+                            toFollowUser.id = originalId
+                            // toggle isFollowing here
+                            if (isFollowing) {
+                                await axios.post('/unfollow/' + toFollowUser.id)
+                                console.log("Successfully unfollowed the user")
+                            } else {
+                                await axios.post('/follow/' + toFollowUser.id)
+                                console.log("Successfully followed the user")
+                            }
+                            this.isPerformingFollow = false
+                        },
+                        onInputChange: function() {
+                            var userInput = document.getElementById('nameInput').value
+                            this.nameInput = userInput
+                        },
+                        shouldDisplayUser: function(fullName) {
+                            var userInput = this.nameInput
+                            if (userInput.length <= 0) {
+                                return true
+                            } else {
+                                return fullName.toUpperCase().indexOf(userInput.toUpperCase()) > -1
+                            }
+                        }
+                    }
+                })
+            </script>
+</div>

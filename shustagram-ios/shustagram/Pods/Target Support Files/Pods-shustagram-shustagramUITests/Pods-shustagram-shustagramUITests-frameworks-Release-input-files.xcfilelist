@@ -1,0 +1,5 @@
+${PODS_ROOT}/Target Support Files/Pods-shustagram-shustagramUITests/Pods-shustagram-shustagramUITests-frameworks.sh
+${BUILT_PRODUCTS_DIR}/Alamofire/Alamofire.framework
+${BUILT_PRODUCTS_DIR}/JGProgressHUD/JGProgressHUD.framework
+${BUILT_PRODUCTS_DIR}/LBTATools/LBTATools.framework
+${BUILT_PRODUCTS_DIR}/SDWebImage/SDWebImage.framework
