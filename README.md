@@ -4,8 +4,10 @@ Welcome to Shustagram(Shu's Instagram)! I made this application out of my love a
 https://shustagram.herokuapp.com/
 You are absolutely welcomed to register your own account and try Shustagram out! (For demo purposes, I have simplified the user signup process, so no email verification is needed at all. Just give it a fake email and you're good to go!) 
 
-Otherwise, you may login using the guest account below
+Otherwise, you may login using the guest account here:
+
 email: guest@gmail.com
+
 password: hello123
 
 # To access Shustagram iOS app
